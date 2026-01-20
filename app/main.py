@@ -10,6 +10,7 @@ from app.whisper_gpu import transcribe, release_gpu
 from app.ollama_client import extract_minutes
 from app.chunking import chunk_text
 from app.ollama_client import extract_chunk_summary, aggregate_minutes
+from app.ollama_client import normalize_partials
 
 
 app = FastAPI(title="Minutes of Meeting AI")
@@ -50,6 +51,7 @@ async def generate_minutes(file: UploadFile = File(...)):
             partial_results.append(result)
 
         # 4. Aggregate
+        normalized = normalize_partials(partial_results)
         minutes = aggregate_minutes(partial_results)
 
 

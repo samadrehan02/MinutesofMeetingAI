@@ -7,6 +7,11 @@ def extract_minutes(transcript: str) -> str:
     prompt = f"""
 You are a technical secretary. Extract highly detailed Minutes of Meeting.
 
+IMPORTANT:
+- key_topics MUST be an array of strings
+- decisions MUST be an array of strings
+- DO NOT use objects for key_topics or decisions
+
 IMPORTANT RULES:
 - Do NOT invent code, APIs, model names, or technical details.
 - ONLY include technical terms that appear explicitly in the transcript.
@@ -63,6 +68,11 @@ Transcript:
 def extract_chunk_summary(transcript_chunk: str) -> dict:
     prompt = f"""
 You extract meeting information from a PARTIAL transcript.
+
+IMPORTANT:
+- key_topics MUST be an array of strings
+- decisions MUST be an array of strings
+- DO NOT use objects for key_topics or decisions
 
 Return ONLY valid JSON.
 
@@ -134,3 +144,15 @@ Partial summaries:
     )
 
     return resp.json()["response"]
+
+def normalize_partials(partials: list[dict]) -> list[dict]:
+    cleaned = []
+
+    for p in partials:
+        cleaned.append({
+            "key_topics": list(map(str, p.get("key_topics", []))),
+            "decisions": list(map(str, p.get("decisions", []))),
+            "tasks": p.get("tasks", [])
+        })
+
+    return cleaned
