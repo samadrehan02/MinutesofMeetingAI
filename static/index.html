@@ -28,28 +28,28 @@
 
         <div id="loading" class="hidden text-center py-10">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid mx-auto"></div>
-            <p class="mt-4 text-slate-600 font-medium italic">Transcribing audio and generating minutes...</p>
+            <p class="mt-4 text-slate-600 font-medium italic">Transcribing audio and generating detailed minutes...</p>
         </div>
 
         <div id="results" class="hidden space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                <h2 class="text-2xl font-bold mb-4 text-slate-800">Summary</h2>
-                <p id="summaryText" class="text-slate-600 leading-relaxed text-lg"></p>
+                <h2 class="text-2xl font-bold mb-4 text-slate-800 border-b pb-2">Meeting Summary</h2>
+                <p id="summaryText" class="text-slate-600 leading-relaxed text-lg italic"></p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">Key Topics</h3>
-                    <ul id="topicsList" class="space-y-2 text-slate-600"></ul>
+                    <ul id="topicsList" class="space-y-4"></ul>
                 </div>
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">Decisions</h3>
-                    <ul id="decisionsList" class="space-y-2 text-slate-600"></ul>
+                    <ul id="decisionsList" class="space-y-4"></ul>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                <h2 class="text-xl font-bold mb-4 text-slate-800">Action Items</h2>
+                <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Action Items</h2>
                 <div id="tasksList" class="grid grid-cols-1 gap-4"></div>
             </div>
         </div>
@@ -64,14 +64,12 @@
         const loading = document.getElementById('loading');
         const results = document.getElementById('results');
 
-        // Trigger file picker
         dropzone.onclick = () => fileInput.click();
 
-        // UI Update when file is selected
         fileInput.onchange = () => {
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                fileNameDisplay.innerHTML = `<span class="text-blue-600">Selected:</span> ${file.name}`;
+                fileNameDisplay.innerHTML = `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
                 fileSpecs.innerText = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
                 dropzone.classList.add('border-blue-400', 'bg-blue-50');
             }
@@ -91,25 +89,43 @@
                 const response = await fetch('/minutes', { method: 'POST', body: formData });
                 const data = await response.json();
                 
-                // Parse the JSON string from Ollama
                 const minutes = JSON.parse(data.minutes_of_meeting);
 
+                // 1. Render Summary
                 document.getElementById('summaryText').innerText = minutes.meeting_summary;
-                document.getElementById('topicsList').innerHTML = minutes.key_topics.map(t => `<li>• ${t}</li>`).join('');
-                document.getElementById('decisionsList').innerHTML = minutes.decisions.map(d => `<li>• ${d}</li>`).join('');
+
+                // 2. Render Detailed Topics
+                document.getElementById('topicsList').innerHTML = minutes.key_topics.map(t => `
+                    <li class="border-l-4 border-blue-100 pl-4">
+                        <strong class="text-slate-800 block text-md">${t.topic}</strong>
+                        <p class="text-sm text-slate-500 mt-1">${t.details}</p>
+                    </li>
+                `).join('');
+
+                // 3. Render Detailed Decisions
+                document.getElementById('decisionsList').innerHTML = minutes.decisions.map(d => `
+                    <li class="border-l-4 border-green-100 pl-4">
+                        <strong class="text-slate-800 block text-md">${d.decision}</strong>
+                        <p class="text-sm text-slate-500 mt-1"><span class="font-semibold">Rationale:</span> ${d.rationale}</p>
+                    </li>
+                `).join('');
+
+                // 4. Render Tasks
                 document.getElementById('tasksList').innerHTML = minutes.tasks.map(t => `
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center hover:bg-slate-100 transition-colors">
                         <div>
                             <p class="font-bold text-slate-800">${t.description}</p>
-                            <p class="text-sm text-slate-500 italic">Due: ${t.deadline || 'N/A'}</p>
+                            <p class="text-sm text-slate-500 italic">Deadline: ${t.deadline || 'N/A'}</p>
                         </div>
-                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">${t.owner || 'Unassigned'}</span>
+                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight">
+                            ${t.owner || 'Unassigned'}
+                        </span>
                     </div>
                 `).join('');
 
                 results.classList.remove('hidden');
             } catch (err) {
-                alert("Error: Ensure your FastAPI and Ollama services are running.");
+                alert("Error: Check console for details. Ensure Ollama and FastAPI are active.");
                 console.error(err);
             } finally {
                 loading.classList.add('hidden');
