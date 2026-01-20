@@ -1,5 +1,4 @@
 import requests
-import json
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3.1:8b-instruct-q4_K_M"
@@ -7,6 +6,7 @@ MODEL = "llama3.1:8b-instruct-q4_K_M"
 def extract_minutes(transcript: str) -> dict:
     prompt = f"""
 You extract Minutes of Meeting.
+
 Return ONLY valid JSON.
 
 Schema:
@@ -33,9 +33,12 @@ Transcript:
             "model": MODEL,
             "prompt": prompt,
             "stream": False,
-            "temperature": 0
+            "temperature": 0,
+            "format": "json"
         },
         timeout=120
     )
 
-    return json.loads(resp.json()["response"])
+    data = resp.json()
+
+    return data["response"]

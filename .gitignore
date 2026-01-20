@@ -3,3 +3,6 @@
 gpu_check.py
 
 test.wav
+
+test_ollama.py
+test_whisper.py
