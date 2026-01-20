@@ -26,7 +26,7 @@
                 id="dropzone"
                 class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
             >
-                <div id="uploadStatus" class="space-y-2">
+                <div class="space-y-2">
                     <div id="fileNameDisplay" class="text-slate-600 font-medium">
                         Click to upload audio
                     </div>
@@ -75,6 +75,7 @@
             <!-- Topics & Decisions -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                <!-- Key Topics -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">
                         Key Topics
@@ -82,6 +83,7 @@
                     <ul id="topicsList" class="space-y-3"></ul>
                 </div>
 
+                <!-- Decisions -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">
                         Decisions
@@ -117,7 +119,8 @@
             const file = fileInput.files[0];
             fileNameDisplay.innerHTML =
                 `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
-            fileSpecs.innerText = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            fileSpecs.innerText =
+                `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
             dropzone.classList.add("border-blue-400", "bg-blue-50");
         };
 
@@ -151,19 +154,21 @@
                 document.getElementById("summaryText").innerText =
                     minutes.meeting_summary || "";
 
-                // Topics
+                // Key Topics
                 document.getElementById("topicsList").innerHTML =
                     (minutes.key_topics || []).map(t => `
-                        <li class="border-l-4 border-blue-100 pl-4 text-slate-700">
-                            ${t}
+                        <li class="border-l-4 border-blue-100 pl-4">
+                            <p class="font-semibold text-slate-800">${t.topic}</p>
+                            <p class="text-slate-600 text-sm mt-1">${t.details}</p>
                         </li>
                     `).join("");
 
                 // Decisions
                 document.getElementById("decisionsList").innerHTML =
                     (minutes.decisions || []).map(d => `
-                        <li class="border-l-4 border-green-100 pl-4 text-slate-700">
-                            ${d}
+                        <li class="border-l-4 border-green-100 pl-4">
+                            <p class="font-semibold text-slate-800">${d.decision}</p>
+                            <p class="text-slate-600 text-sm italic mt-1">${d.rationale}</p>
                         </li>
                     `).join("");
 

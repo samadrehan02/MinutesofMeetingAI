@@ -1,12 +1,15 @@
 torch
 torchvision
 torchaudio --index-url https://download.pytorch.org/whl/cu121
-fastapi 
-uvicorn 
-python-multipart 
-faster-whisper 
-ctranslate2 
-requests 
-pydantic 
-ffmpeg-python
+
+fastapi
+uvicorn
+python-multipart
+
+faster-whisper
+ctranslate2
+
+requests
 python-dotenv
+ffmpeg-python
+pydantic

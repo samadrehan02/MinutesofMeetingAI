@@ -13,7 +13,8 @@ def transcribe(audio_path: str) -> str:
         beam_size=5,
         vad_filter=True
     )
-    return " ".join(s.text.strip() for s in segments)
+
+    return " ".join(segment.text.strip() for segment in segments)
 
 def release_gpu():
     torch.cuda.empty_cache()
