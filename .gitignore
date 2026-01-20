@@ -6,3 +6,4 @@ test.wav
 
 test_ollama.py
 test_whisper.py
+test_audio_generator.py
