@@ -3,20 +3,47 @@ import edge_tts
 
 # Define a short script with two different voices
 speakers = [
-    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Good morning everyone. Let's get settled. Today is January 20th, 2026. We are exactly one week out from our hard deadline on January 27th. This MoM AI project is the priority. We need to walk through the entire pipeline, from the moment a user hits the 'Generate' button on our new UI until the final JSON is returned by Ollama. Sonia, let's start with the backend stability."},
-    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "Thanks. On the backend, I've spent the last 48 hours refining the main.py and whisper_gpu files. The core issue we had last week was the CUDA Out-of-Memory error when switching from transcription to extraction. To fix this, I've formalized the release_gpu function. It now explicitly calls torch.cuda.empty_cache() and deletes the model variable from memory before we even initiate the request to Ollama. This is critical because Llama 3.1 8B requires about 5.5 gigabytes of VRAM in the quantized format we are using, and Whisper takes about 2 to 3 gigabytes. On an 8 gigabyte card, we were redlining."},
-    {"name": "Natasha", "voice": "en-AU-NatashaNeural", "text": "I've been monitoring those VRAM spikes during my stress tests. Sonia, the cache clearing is definitely working better, but I've noticed a 3-second hang-time during the handover. Is that something we can optimize, or is that just the hardware latency for the GPU to reallocate memory blocks?"},
-    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "It's mostly hardware latency, Natasha. Moving the weights out of the GPU and loading the next model takes time. For the MVP, I think 3 seconds is acceptable as long as the UI shows a 'loading' state so the user doesn't think the app crashed."},
-    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Speaking of the UI, Prabhat, where do we stand on the frontend? We need it to be clean and modern for the client demo on Friday."},
-    {"name": "Prabhat", "voice": "en-IN-PrabhatNeural", "text": "The UI is mostly ready. I’ve implemented the Tailwind CSS layout we discussed. I also added the logic where the upload box changes color and displays the filename once a file is selected. Users were getting confused before, but now they get immediate feedback. One thing I'm still working on is the concurrency issue. If multiple people hit the server at once, the GPU will crash because we don't have a queue yet. I'm going to set up a Redis queue. I'll have a prototype by Wednesday, but for the January 27th launch, we might have to stick to a single-processing stream to ensure stability."},
-    {"name": "Natasha", "voice": "en-AU-NatashaNeural", "text": "Prabhat, if we limit it to a single stream, we need to make sure the UI tells the user 'Server Busy' rather than just letting the request time out. Otherwise, our QA scores will tank."},
-    {"name": "Prabhat", "voice": "en-IN-PrabhatNeural", "text": "Good point. I'll add a status check that queries the backend to see if the GPU is currently locked before allowing a new upload."},
-    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Let's talk models. Roger, you’ve been testing the output quality. Are we 100% sure about Llama 3.1 8B?"},
-    {"name": "Roger", "voice": "en-US-RogerNeural", "text": "Yes. We tested the 70B model, but even with high quantization, the inference time per meeting was over 4 minutes. The 8B-instruct-q4_K_M version in Ollama is giving us near-instant extraction once the transcript is ready. The accuracy on identifying action items is around 94%, which is higher than the client's requirement of 90%. I’m also using Edge TTS to generate synthetic noise-heavy meetings to simulate real-world office environments. Natasha, I'll send you those noisy audio files by Thursday afternoon so you can run the final stress tests."},
-    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "I can also add a 'Download PDF' button to the results page. I'll use a simple client-side library to convert the JSON data into a formatted document. I should have that implemented by Friday morning."},
-    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Okay, let's recap the tasks and deadlines. Prabhat, you are finalizing the Redis queue and the 'Server Busy' UI state by Wednesday. Sonia, you're adding the PDF export by Friday. Roger, you're delivering the noise-test audio files to Natasha by Thursday. Natasha, your final QA sign-off is due by the end of the day Thursday. If everything looks good, we go live on January 27th. Any questions?"},
-    {"name": "Prabhat", "voice": "en-IN-PrabhatNeural", "text": "Just one. Are we supporting mobile uploads for the MVP?"},
-    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Not for this version. Stick to the desktop web interface. We can look at mobile in February. Alright, great work everyone. Meeting adjourned."}
+    # --- Part 0 ---
+    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Good morning everyone. Let's get settled and focused. Today is Tuesday, January 20th, 2026. We are exactly seven days away from our hard deadline on January 27th. This Minutes of Meeting AI project is currently the highest priority for the executive team. We need a flawless end-to-end walk-through of the entire pipeline today. We will track every single millisecond—from the moment a user hits the 'Generate' button on our new UI until that final structured JSON is returned by Ollama. Sonia, you've been leading the backend stabilization effort. Let’s start with the current state of the GPU handover logic."},
+    
+    # --- Part 1 ---
+    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "Thanks, Guy. On the backend, I've spent the last 48 hours refining main.py and the whisper_gpu utility. The core issue we faced last week was the CUDA Out-of-Memory error when switching from transcription to extraction. To fix this, I've formalized the release_gpu function. It now explicitly calls torch.cuda.empty_cache() and manually deletes the model variables from memory before we even initiate the POST request to the Ollama local API. This is vital because Llama 3.1 8B requires about 5.5 gigabytes of VRAM in our current quantized format, and Whisper takes another 2 to 3 gigabytes. On our standard 8 gigabyte cards, we were redlining and crashing the service constantly."},
+    
+    # --- Part 2 ---
+    {"name": "Natasha", "voice": "en-AU-NatashaNeural", "text": "I've been monitoring those VRAM spikes closely during my stress tests on the dev server. Sonia, the cache clearing is definitely working much better than the previous iteration, but I've noticed a persistent 3 to 5-second hang-time during the handover between the models. I wanted to ask Liam—as our infrastructure lead—is that something we can actually optimize further in the Python code, or is that just the inherent hardware latency for the GPU to reallocate those massive memory blocks? If we can't reduce it, we need to ensure the user interface accounts for it."},
+    
+    # --- Part 3 ---
+    {"name": "Liam", "voice": "en-CA-LiamNeural", "text": "Natasha, that's almost entirely hardware and PCIe bus latency. Moving the Whisper weights out of the GPU and loading the Llama weights into the active VRAM simply takes time on these consumer-grade cards. For the MVP launch on January 27th, I think 3 to 5 seconds is acceptable. However, Clara, from a security standpoint, do we have any concerns about these models being swapped in and out of memory so frequently in a multi-tenant environment?"},
+    
+    # --- Part 4 ---
+    {"name": "Clara", "voice": "en-CA-ClaraNeural", "text": "Liam, as long as the temp files are handled correctly, we're safe. Sonia, I noticed in main.py we use a temporary file for the audio upload. Are we absolutely certain that os.remove is firing every single time? We cannot have raw meeting audio sitting in the /tmp directory if the transcription process fails halfway through. That would be a major compliance breach for our client."},
+    
+    # --- Part 5 ---
+    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "I've wrapped the entire logic in a try-finally block. Even if Whisper or Ollama throws an exception, the finally block executes the os.remove on the audio_path. I've also implemented a 120-second timeout on the Ollama request to prevent a hanging process from keeping a file lock indefinitely. If it fails, the file is deleted, and the user gets a structured error message."},
+    
+    # --- Part 6 ---
+    {"name": "Prabhat", "voice": "en-IN-PrabhatNeural", "text": "Speaking of the interface, the UI is mostly ready. I’ve implemented the Tailwind CSS layout we discussed. I also added the logic where the upload box changes color and displays the filename once a file is selected. Users were getting confused before, but now they get immediate visual feedback. For Natasha's concern about the 5-second gap, I'll add a 'Memory Handover' status message so the user knows the AI is switching from its 'ears' to its 'brain'."},
+    
+    # --- Part 7 ---
+    {"name": "Liam", "voice": "en-CA-LiamNeural", "text": "Prabhat, that's great for the visual side, but what about the backend concurrency? If two managers upload a meeting at the same time, we only have one GPU card. The second request will fail the CUDA lock immediately."},
+    
+    # --- Part 8 ---
+    {"name": "Prabhat", "voice": "en-IN-PrabhatNeural", "text": "That's exactly why I'm setting up a Redis queue this week. I'll have a prototype by Wednesday. For the January 27th launch, we will stick to a single-processing stream to ensure stability, but the UI will query the Redis state. If the GPU is busy, the user will see a 'Queue Position' instead of an error message. It keeps the experience smooth without needing more hardware yet."},
+    
+    # --- Part 9 ---
+    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Let's talk about the output quality. Roger, you’ve been testing the JSON extraction. Are we 100% sure about sticking with Llama 3.1 8B, or should we try a different quantized version for better reasoning?"},
+    
+    # --- Part 10 ---
+    {"name": "Roger", "voice": "en-US-RogerNeural", "text": "We tested the 70B model, but even with high quantization, the inference time per meeting was over 4 minutes. The 8B-instruct-q4_K_M version in Ollama is giving us near-instant extraction once the transcript is ready. Our accuracy on identifying action items is around 94%, which is higher than the client's requirement of 90%. I’m also using Edge TTS to generate synthetic noise-heavy meetings to simulate real-world office environments. Natasha, I'll send you those noisy audio files by Thursday afternoon so you can run the final stress tests."},
+    
+    # --- Part 11 ---
+    {"name": "Natasha", "voice": "en-AU-NatashaNeural", "text": "How 'noisy' are we talking, Roger? Our Whisper 'small' model is good, but if there's heavy background chatter or coffee machine noise, the word error rate might climb. Have you adjusted the vad_filter parameters in whisper_gpu.py to compensate for office background noise?"},
+    
+    # --- Part 12 ---
+    {"name": "Sonia", "voice": "en-GB-SoniaNeural", "text": "I've actually already accounted for that in the transcription settings. Also, I can add a 'Download PDF' button to the results page by Friday. I'll use a simple client-side library to convert the JSON data into a formatted document. It will format the tasks, decisions, and summary into a clean corporate template without needing any backend changes."},
+    
+    # --- Part 13 ---
+    {"name": "Manager", "voice": "en-US-GuyNeural", "text": "Okay, final recap. Prabhat, you have the Redis queue and 'Server Busy' UI by Wednesday. Sonia, you're adding the PDF export by Friday. Roger, you're delivering noise-test files by Thursday. Natasha and Clara, your final QA and Security sign-off is due Thursday evening. We are not supporting mobile for the MVP—stick to desktop web. If we hit these marks, we go live on January 27th. Great work, everyone. Meeting adjourned!"}
 ]
 
 async def generate_meeting():
