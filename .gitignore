@@ -1,3 +1,5 @@
 .venv/
 
 gpu_check.py
+
+test.wav
