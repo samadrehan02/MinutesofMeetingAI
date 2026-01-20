@@ -9,3 +9,4 @@ ctranslate2
 requests 
 pydantic 
 ffmpeg-python
+python-dotenv

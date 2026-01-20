@@ -6,50 +6,88 @@
     <title>MinutesOfMeeting AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-slate-50 text-slate-900 font-sans">
     <div class="max-w-4xl mx-auto py-12 px-6">
         <header class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-slate-800">MinutesOfMeeting <span class="text-blue-600">AI</span></h1>
-            <p class="text-slate-500 mt-2">Clean, GPU-accelerated meeting summarization.</p>
+            <h1 class="text-4xl font-extrabold text-slate-800">
+                MinutesOfMeeting <span class="text-blue-600">AI</span>
+            </h1>
+            <p class="text-slate-500 mt-2">
+                Clean, GPU-accelerated meeting summarization.
+            </p>
         </header>
 
+        <!-- Upload Card -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
-            <div id="dropzone" class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50">
+            <div
+                id="dropzone"
+                class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
+            >
                 <div id="uploadStatus" class="space-y-2">
-                    <div id="fileNameDisplay" class="text-slate-600 font-medium">Click to upload audio</div>
-                    <div id="fileSpecs" class="text-xs text-slate-400 mt-1">Supports WAV, MP3, M4A, WEBM</div>
+                    <div id="fileNameDisplay" class="text-slate-600 font-medium">
+                        Click to upload audio
+                    </div>
+                    <div id="fileSpecs" class="text-xs text-slate-400 mt-1">
+                        Supports WAV, MP3, M4A, WEBM
+                    </div>
                 </div>
-                <input type="file" id="fileInput" class="hidden" accept=".wav,.mp3,.m4a,.webm">
+                <input
+                    type="file"
+                    id="fileInput"
+                    class="hidden"
+                    accept=".wav,.mp3,.m4a,.webm"
+                >
             </div>
-            <button id="processBtn" class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all disabled:bg-slate-300 shadow-lg shadow-blue-100">
+
+            <button
+                id="processBtn"
+                class="w-full mt-6 bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all disabled:bg-slate-300 shadow-lg shadow-blue-100"
+            >
                 Generate Minutes
             </button>
         </div>
 
+        <!-- Loading -->
         <div id="loading" class="hidden text-center py-10">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid mx-auto"></div>
-            <p class="mt-4 text-slate-600 font-medium italic">Transcribing audio and generating detailed minutes...</p>
+            <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mx-auto"></div>
+            <p class="mt-4 text-slate-600 font-medium italic">
+                Transcribing audio and generating minutes...
+            </p>
         </div>
 
+        <!-- Results -->
         <div id="results" class="hidden space-y-6">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                <h2 class="text-2xl font-bold mb-4 text-slate-800 border-b pb-2">Meeting Summary</h2>
-                <p id="summaryText" class="text-slate-600 leading-relaxed text-lg italic"></p>
+                <h2 class="text-2xl font-bold mb-4 text-slate-800 border-b pb-2">
+                    Meeting Summary
+                </h2>
+                <p
+                    id="summaryText"
+                    class="text-slate-600 leading-relaxed text-lg italic"
+                ></p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">Key Topics</h3>
+                    <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">
+                        Key Topics
+                    </h3>
                     <ul id="topicsList" class="space-y-4"></ul>
                 </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">Decisions</h3>
+                    <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">
+                        Decisions
+                    </h3>
                     <ul id="decisionsList" class="space-y-4"></ul>
                 </div>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Action Items</h2>
+                <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">
+                    Action Items
+                </h2>
                 <div id="tasksList" class="grid grid-cols-1 gap-4"></div>
             </div>
         </div>
@@ -69,14 +107,19 @@
         fileInput.onchange = () => {
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                fileNameDisplay.innerHTML = `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
-                fileSpecs.innerText = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+                fileNameDisplay.innerHTML =
+                    `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
+                fileSpecs.innerText =
+                    `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
                 dropzone.classList.add('border-blue-400', 'bg-blue-50');
             }
         };
 
         processBtn.onclick = async () => {
-            if (!fileInput.files[0]) return alert("Please select a file.");
+            if (!fileInput.files[0]) {
+                alert("Please select a file.");
+                return;
+            }
 
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
@@ -86,46 +129,70 @@
             processBtn.disabled = true;
 
             try {
-                const response = await fetch('/minutes', { method: 'POST', body: formData });
+                const response = await fetch('/minutes', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.status}`);
+                }
+
                 const data = await response.json();
-                
-                const minutes = JSON.parse(data.minutes_of_meeting);
+                console.log("Raw AI output:", data.minutes_of_meeting);
 
-                // 1. Render Summary
-                document.getElementById('summaryText').innerText = minutes.meeting_summary;
+                let minutes;
+                try {
+                    minutes = JSON.parse(data.minutes_of_meeting);
+                } catch (e) {
+                    alert("Failed to parse AI output. Check server console.");
+                    console.error("Invalid JSON:", data.minutes_of_meeting);
+                    return;
+                }
 
-                // 2. Render Detailed Topics
-                document.getElementById('topicsList').innerHTML = minutes.key_topics.map(t => `
-                    <li class="border-l-4 border-blue-100 pl-4">
-                        <strong class="text-slate-800 block text-md">${t.topic}</strong>
-                        <p class="text-sm text-slate-500 mt-1">${t.details}</p>
-                    </li>
-                `).join('');
+                // Render summary
+                document.getElementById('summaryText').innerText =
+                    minutes.meeting_summary || '';
 
-                // 3. Render Detailed Decisions
-                document.getElementById('decisionsList').innerHTML = minutes.decisions.map(d => `
-                    <li class="border-l-4 border-green-100 pl-4">
-                        <strong class="text-slate-800 block text-md">${d.decision}</strong>
-                        <p class="text-sm text-slate-500 mt-1"><span class="font-semibold">Rationale:</span> ${d.rationale}</p>
-                    </li>
-                `).join('');
+                // Render topics
+                document.getElementById('topicsList').innerHTML =
+                    (minutes.key_topics || []).map(t => `
+                        <li class="border-l-4 border-blue-100 pl-4">
+                            <strong class="text-slate-800 block text-md">${t.topic}</strong>
+                            <p class="text-sm text-slate-500 mt-1">${t.details}</p>
+                        </li>
+                    `).join('');
 
-                // 4. Render Tasks
-                document.getElementById('tasksList').innerHTML = minutes.tasks.map(t => `
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center hover:bg-slate-100 transition-colors">
-                        <div>
-                            <p class="font-bold text-slate-800">${t.description}</p>
-                            <p class="text-sm text-slate-500 italic">Deadline: ${t.deadline || 'N/A'}</p>
+                // Render decisions
+                document.getElementById('decisionsList').innerHTML =
+                    (minutes.decisions || []).map(d => `
+                        <li class="border-l-4 border-green-100 pl-4">
+                            <strong class="text-slate-800 block text-md">${d.decision}</strong>
+                            <p class="text-sm text-slate-500 mt-1">
+                                <span class="font-semibold">Rationale:</span> ${d.rationale}
+                            </p>
+                        </li>
+                    `).join('');
+
+                // Render tasks
+                document.getElementById('tasksList').innerHTML =
+                    (minutes.tasks || []).map(t => `
+                        <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-slate-800">${t.description}</p>
+                                <p class="text-sm text-slate-500 italic">
+                                    Deadline: ${t.deadline || 'N/A'}
+                                </p>
+                            </div>
+                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+                                ${t.owner || 'Unassigned'}
+                            </span>
                         </div>
-                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight">
-                            ${t.owner || 'Unassigned'}
-                        </span>
-                    </div>
-                `).join('');
+                    `).join('');
 
                 results.classList.remove('hidden');
             } catch (err) {
-                alert("Error: Check console for details. Ensure Ollama and FastAPI are active.");
+                alert("Backend processing failed. Check server console.");
                 console.error(err);
             } finally {
                 loading.classList.add('hidden');

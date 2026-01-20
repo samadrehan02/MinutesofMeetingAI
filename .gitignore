@@ -1,7 +1,13 @@
 .venv/
-
+.env
 gpu_check.py
-
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+test.py
 test.wav
 
 test_ollama.py
