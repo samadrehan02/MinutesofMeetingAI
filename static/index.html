@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MinutesOfMeeting</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Minutes of Meeting AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="bg-slate-50 text-slate-900 font-sans">
     <div class="max-w-4xl mx-auto py-12 px-6">
+
+        <!-- Header -->
         <header class="text-center mb-10">
             <h1 class="text-4xl font-extrabold text-slate-800">
-                Meeting Summarizer <span class="text-blue-600"></span>
+                Meeting Summarizer
             </h1>
             <p class="text-slate-500 mt-2">
+                Upload a meeting recording to generate minutes
             </p>
         </header>
 
@@ -36,7 +39,7 @@
                     id="fileInput"
                     class="hidden"
                     accept=".wav,.mp3,.m4a,.webm"
-                >
+                />
             </div>
 
             <button
@@ -51,12 +54,14 @@
         <div id="loading" class="hidden text-center py-10">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mx-auto"></div>
             <p class="mt-4 text-slate-600 font-medium italic">
-                Transcribing audio and generating minutes...
+                Transcribing audio and generating minutes…
             </p>
         </div>
 
         <!-- Results -->
         <div id="results" class="hidden space-y-6">
+
+            <!-- Summary -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                 <h2 class="text-2xl font-bold mb-4 text-slate-800 border-b pb-2">
                     Meeting Summary
@@ -67,51 +72,53 @@
                 ></p>
             </div>
 
+            <!-- Topics & Decisions -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">
                         Key Topics
                     </h3>
-                    <ul id="topicsList" class="space-y-4"></ul>
+                    <ul id="topicsList" class="space-y-3"></ul>
                 </div>
 
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">
                         Decisions
                     </h3>
-                    <ul id="decisionsList" class="space-y-4"></ul>
+                    <ul id="decisionsList" class="space-y-3"></ul>
                 </div>
             </div>
 
+            <!-- Tasks -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                 <h2 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">
                     Action Items
                 </h2>
                 <div id="tasksList" class="grid grid-cols-1 gap-4"></div>
             </div>
+
         </div>
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const dropzone = document.getElementById('dropzone');
-        const fileNameDisplay = document.getElementById('fileNameDisplay');
-        const fileSpecs = document.getElementById('fileSpecs');
-        const processBtn = document.getElementById('processBtn');
-        const loading = document.getElementById('loading');
-        const results = document.getElementById('results');
+        const fileInput = document.getElementById("fileInput");
+        const dropzone = document.getElementById("dropzone");
+        const fileNameDisplay = document.getElementById("fileNameDisplay");
+        const fileSpecs = document.getElementById("fileSpecs");
+        const processBtn = document.getElementById("processBtn");
+        const loading = document.getElementById("loading");
+        const results = document.getElementById("results");
 
         dropzone.onclick = () => fileInput.click();
 
         fileInput.onchange = () => {
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileNameDisplay.innerHTML =
-                    `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
-                fileSpecs.innerText =
-                    `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
-                dropzone.classList.add('border-blue-400', 'bg-blue-50');
-            }
+            if (!fileInput.files.length) return;
+            const file = fileInput.files[0];
+            fileNameDisplay.innerHTML =
+                `<span class="text-blue-600 font-bold">Selected:</span> ${file.name}`;
+            fileSpecs.innerText = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            dropzone.classList.add("border-blue-400", "bg-blue-50");
         };
 
         processBtn.onclick = async () => {
@@ -123,13 +130,13 @@
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
 
-            loading.classList.remove('hidden');
-            results.classList.add('hidden');
+            loading.classList.remove("hidden");
+            results.classList.add("hidden");
             processBtn.disabled = true;
 
             try {
-                const response = await fetch('/minutes', {
-                    method: 'POST',
+                const response = await fetch("/minutes", {
+                    method: "POST",
                     body: formData
                 });
 
@@ -138,63 +145,50 @@
                 }
 
                 const data = await response.json();
-                console.log("Raw AI output:", data.minutes_of_meeting);
+                const minutes = data.minutes_of_meeting;
 
-                let minutes;
-                try {
-                    minutes = JSON.parse(data.minutes_of_meeting);
-                } catch (e) {
-                    alert("Failed to parse AI output. Check server console.");
-                    console.error("Invalid JSON:", data.minutes_of_meeting);
-                    return;
-                }
+                // Summary
+                document.getElementById("summaryText").innerText =
+                    minutes.meeting_summary || "";
 
-                // Render summary
-                document.getElementById('summaryText').innerText =
-                    minutes.meeting_summary || '';
-
-                // Render topics
-                document.getElementById('topicsList').innerHTML =
+                // Topics
+                document.getElementById("topicsList").innerHTML =
                     (minutes.key_topics || []).map(t => `
-                        <li class="border-l-4 border-blue-100 pl-4">
-                            <strong class="text-slate-800 block text-md">${t.topic}</strong>
-                            <p class="text-sm text-slate-500 mt-1">${t.details}</p>
+                        <li class="border-l-4 border-blue-100 pl-4 text-slate-700">
+                            ${t}
                         </li>
-                    `).join('');
+                    `).join("");
 
-                // Render decisions
-                document.getElementById('decisionsList').innerHTML =
+                // Decisions
+                document.getElementById("decisionsList").innerHTML =
                     (minutes.decisions || []).map(d => `
-                        <li class="border-l-4 border-green-100 pl-4">
-                            <strong class="text-slate-800 block text-md">${d.decision}</strong>
-                            <p class="text-sm text-slate-500 mt-1">
-                                <span class="font-semibold">Rationale:</span> ${d.rationale}
-                            </p>
+                        <li class="border-l-4 border-green-100 pl-4 text-slate-700">
+                            ${d}
                         </li>
-                    `).join('');
+                    `).join("");
 
-                // Render tasks
-                document.getElementById('tasksList').innerHTML =
+                // Tasks
+                document.getElementById("tasksList").innerHTML =
                     (minutes.tasks || []).map(t => `
                         <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
                             <div>
                                 <p class="font-bold text-slate-800">${t.description}</p>
                                 <p class="text-sm text-slate-500 italic">
-                                    Deadline: ${t.deadline || 'N/A'}
+                                    Deadline: ${t.deadline || "N/A"}
                                 </p>
                             </div>
                             <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
-                                ${t.owner || 'Unassigned'}
+                                ${t.owner || "Unassigned"}
                             </span>
                         </div>
-                    `).join('');
+                    `).join("");
 
-                results.classList.remove('hidden');
+                results.classList.remove("hidden");
             } catch (err) {
-                alert("Backend processing failed. Check server console.");
+                alert("Processing failed. Check server logs.");
                 console.error(err);
             } finally {
-                loading.classList.add('hidden');
+                loading.classList.add("hidden");
                 processBtn.disabled = false;
             }
         };

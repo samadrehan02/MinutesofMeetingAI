@@ -105,7 +105,14 @@ Transcript chunk:
         timeout=120
     )
 
-    return resp.json()["response"]
+    data = resp.json()["response"]
+
+    if isinstance(data, str):
+        import json
+        data = json.loads(data)
+
+    return data
+
 
 def aggregate_minutes(chunks: list[dict]) -> dict:
     prompt = f"""
@@ -145,14 +152,23 @@ Partial summaries:
 
     return resp.json()["response"]
 
-def normalize_partials(partials: list[dict]) -> list[dict]:
+def normalize_partials(partials: list) -> list[dict]:
     cleaned = []
 
     for p in partials:
+        # If still string, parse
+        if isinstance(p, str):
+            import json
+            p = json.loads(p)
+
+        if not isinstance(p, dict):
+            continue  # drop invalid chunk safely
+
         cleaned.append({
-            "key_topics": list(map(str, p.get("key_topics", []))),
-            "decisions": list(map(str, p.get("decisions", []))),
+            "key_topics": [str(x) for x in p.get("key_topics", [])],
+            "decisions": [str(x) for x in p.get("decisions", [])],
             "tasks": p.get("tasks", [])
         })
 
     return cleaned
+

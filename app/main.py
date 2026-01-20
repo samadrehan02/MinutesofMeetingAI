@@ -52,7 +52,7 @@ async def generate_minutes(file: UploadFile = File(...)):
 
         # 4. Aggregate
         normalized = normalize_partials(partial_results)
-        minutes = aggregate_minutes(partial_results)
+        minutes = aggregate_minutes(normalized)
 
 
         return {
