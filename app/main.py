@@ -8,6 +8,8 @@ import tempfile
 import os
 from app.whisper_gpu import transcribe, release_gpu
 from app.ollama_client import extract_minutes
+from app.chunking import chunk_text
+from app.ollama_client import extract_chunk_summary, aggregate_minutes
 
 
 app = FastAPI(title="Minutes of Meeting AI")
@@ -39,8 +41,17 @@ async def generate_minutes(file: UploadFile = File(...)):
         # Step 2: Clear VRAM for LLM
         release_gpu()
 
-        # Step 3: LLM Extraction 
-        minutes = extract_minutes(transcript)
+        chunks = chunk_text(transcript)
+
+        partial_results = []
+
+        for chunk in chunks:
+            result = extract_chunk_summary(chunk)
+            partial_results.append(result)
+
+        # 4. Aggregate
+        minutes = aggregate_minutes(partial_results)
+
 
         return {
             "transcript": transcript,

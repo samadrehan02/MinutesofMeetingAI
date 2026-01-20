@@ -59,3 +59,78 @@ Transcript:
         timeout=120
     )
     return resp.json()["response"]
+
+def extract_chunk_summary(transcript_chunk: str) -> dict:
+    prompt = f"""
+You extract meeting information from a PARTIAL transcript.
+
+Return ONLY valid JSON.
+
+Schema:
+{{
+  "key_topics": string[],
+  "decisions": string[],
+  "tasks": [
+    {{
+      "description": string,
+      "owner": string|null,
+      "deadline": string|null
+    }}
+  ]
+}}
+
+Transcript chunk:
+\"\"\"{transcript_chunk}\"\"\"
+"""
+
+    resp = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0,
+            "format": "json"
+        },
+        timeout=120
+    )
+
+    return resp.json()["response"]
+
+def aggregate_minutes(chunks: list[dict]) -> dict:
+    prompt = f"""
+You combine multiple partial meeting summaries into final Minutes of Meeting.
+
+Return ONLY valid JSON.
+
+Schema:
+{{
+  "meeting_summary": string,
+  "key_topics": string[],
+  "decisions": string[],
+  "tasks": [
+    {{
+      "description": string,
+      "owner": string|null,
+      "deadline": string|null
+    }}
+  ]
+}}
+
+Partial summaries:
+{chunks}
+"""
+
+    resp = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0,
+            "format": "json"
+        },
+        timeout=120
+    )
+
+    return resp.json()["response"]
