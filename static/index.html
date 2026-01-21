@@ -21,24 +21,24 @@
         </header>
 
         <!-- Upload Card -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-4">
             <div
                 id="dropzone"
                 class="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-blue-400 transition-all cursor-pointer bg-slate-50"
             >
                 <div class="space-y-2">
                     <div id="fileNameDisplay" class="text-slate-600 font-medium">
-                        Click to upload audio
+                        Click to upload audio or video
                     </div>
                     <div id="fileSpecs" class="text-xs text-slate-400 mt-1">
-                        Supports WAV, MP3, M4A, WEBM
+                        Supports WAV, MP3, M4A, WEBM, MP4
                     </div>
                 </div>
                 <input
                     type="file"
                     id="fileInput"
                     class="hidden"
-                    accept=".wav,.mp3,.m4a,.webm"
+                    accept=".wav,.mp3,.m4a,.webm,.mp4"
                 />
             </div>
 
@@ -50,7 +50,24 @@
             </button>
         </div>
 
-        <!-- Loading -->
+        <!-- Upload Progress (DETERMINATE) -->
+        <div id="uploadProgressContainer" class="hidden mb-8">
+            <div class="w-full bg-slate-200 rounded-full h-3">
+                <div
+                    id="uploadProgressBar"
+                    class="bg-blue-600 h-3 rounded-full transition-all"
+                    style="width: 0%"
+                ></div>
+            </div>
+            <p
+                id="uploadProgressText"
+                class="text-sm text-slate-600 mt-2 text-center"
+            >
+                Uploading…
+            </p>
+        </div>
+
+        <!-- Processing Spinner (INDETERMINATE) -->
         <div id="loading" class="hidden text-center py-10">
             <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 mx-auto"></div>
             <p class="mt-4 text-slate-600 font-medium italic">
@@ -75,7 +92,6 @@
             <!-- Topics & Decisions -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                <!-- Key Topics -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-blue-600 uppercase tracking-wider">
                         Key Topics
@@ -83,7 +99,6 @@
                     <ul id="topicsList" class="space-y-3"></ul>
                 </div>
 
-                <!-- Decisions -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                     <h3 class="text-lg font-bold mb-4 text-green-600 uppercase tracking-wider">
                         Decisions
@@ -109,6 +124,11 @@
         const fileNameDisplay = document.getElementById("fileNameDisplay");
         const fileSpecs = document.getElementById("fileSpecs");
         const processBtn = document.getElementById("processBtn");
+
+        const progressContainer = document.getElementById("uploadProgressContainer");
+        const progressBar = document.getElementById("uploadProgressBar");
+        const progressText = document.getElementById("uploadProgressText");
+
         const loading = document.getElementById("loading");
         const results = document.getElementById("results");
 
@@ -124,7 +144,7 @@
             dropzone.classList.add("border-blue-400", "bg-blue-50");
         };
 
-        processBtn.onclick = async () => {
+        processBtn.onclick = () => {
             if (!fileInput.files[0]) {
                 alert("Please select a file.");
                 return;
@@ -133,28 +153,58 @@
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
 
-            loading.classList.remove("hidden");
-            results.classList.add("hidden");
             processBtn.disabled = true;
+            results.classList.add("hidden");
+            loading.classList.add("hidden");
 
-            try {
-                const response = await fetch("/minutes", {
-                    method: "POST",
-                    body: formData
-                });
+            progressBar.style.width = "0%";
+            progressText.innerText = "Uploading…";
+            progressContainer.classList.remove("hidden");
 
-                if (!response.ok) {
-                    throw new Error(`Backend error: ${response.status}`);
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/minutes");
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.round((event.loaded / event.total) * 100);
+                    progressBar.style.width = percent + "%";
+                    progressText.innerText = `Uploading… ${percent}%`;
+
+                    if (percent === 100) {
+                        // Upload complete → switch to processing UI
+                        progressContainer.classList.add("hidden");
+                        loading.classList.remove("hidden");
+                    }
+                }
+            };
+
+            xhr.onerror = () => {
+                alert("Upload failed.");
+                processBtn.disabled = false;
+                progressContainer.classList.add("hidden");
+                loading.classList.add("hidden");
+            };
+
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState !== 4) return;
+
+                // Request fully finished → spinner must be off
+                loading.classList.add("hidden");
+                progressContainer.classList.add("hidden");
+
+                if (xhr.status !== 200) {
+                    alert("Processing failed.");
+                    processBtn.disabled = false;
+                    return;
                 }
 
-                const data = await response.json();
+                const data = JSON.parse(xhr.responseText);
                 const minutes = data.minutes_of_meeting;
 
-                // Summary
+                // render results
                 document.getElementById("summaryText").innerText =
                     minutes.meeting_summary || "";
 
-                // Key Topics
                 document.getElementById("topicsList").innerHTML =
                     (minutes.key_topics || []).map(t => `
                         <li class="border-l-4 border-blue-100 pl-4">
@@ -163,7 +213,6 @@
                         </li>
                     `).join("");
 
-                // Decisions
                 document.getElementById("decisionsList").innerHTML =
                     (minutes.decisions || []).map(d => `
                         <li class="border-l-4 border-green-100 pl-4">
@@ -172,7 +221,6 @@
                         </li>
                     `).join("");
 
-                // Tasks
                 document.getElementById("tasksList").innerHTML =
                     (minutes.tasks || []).map(t => `
                         <div class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
@@ -189,13 +237,11 @@
                     `).join("");
 
                 results.classList.remove("hidden");
-            } catch (err) {
-                alert("Processing failed. Check server logs.");
-                console.error(err);
-            } finally {
-                loading.classList.add("hidden");
                 processBtn.disabled = false;
-            }
+            };
+
+
+            xhr.send(formData);
         };
     </script>
 </body>

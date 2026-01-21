@@ -104,11 +104,57 @@ Transcript chunk:
 
 def synthesize_minutes(topics, decisions, tasks) -> str:
     prompt = f"""
-You are generating FINAL Minutes of Meeting.
+You are generating FINAL Minutes of Meeting for a municipal council meeting.
 
-Use ONLY the provided data.
-Do NOT invent details.
-Do NOT omit important information.
+Your task is to CONSOLIDATE, ABSTRACT, and EXPAND raw meeting facts into
+professional, detailed minutes suitable for public record.
+
+IMPORTANT:
+This is a long meeting covering multiple agenda items.
+
+Do NOT overly compress the output.
+Prefer completeness over brevity.
+If multiple approvals or discussions occurred, list them separately.
+It is acceptable to include many topics and decisions.
+
+CRITICAL RULES:
+- Use ONLY the provided data
+- Do NOT invent facts, numbers, conditions, or names
+- Do NOT speculate beyond the provided material
+- Remove exact duplicates, but PRESERVE important detail
+- If conditions are mentioned, describe them at a high level
+- If approvals are mentioned, explain what was approved and why
+- Group similar items only when they clearly refer to the same agenda item
+
+Meeting Summary:
+- Write a detailed 5–7 sentence summary
+- Mention the types of applications reviewed
+- Mention major approvals and unanimous decisions
+- Mention public hearings and rezonings explicitly
+
+Key Topics:
+- Use high-level topic names
+- Under each topic, explain:
+  - what was discussed
+  - what applications or permits were involved
+  - what the outcome was
+- Include contextual details (locations, business type, purpose) if present
+
+Decisions:
+- Each decision must:
+  - clearly state WHAT was approved
+  - include CONDITIONS at a descriptive level
+  - mention whether it was unanimous if stated
+- Avoid repeating the same decision wording
+
+Action Items:
+- Describe the task clearly and completely
+- Preserve owners if named
+- Clarify what must be done and why, if stated
+- Use "Unassigned" only if no owner is mentioned
+- Use "N/A" only if no deadline is stated
+
+Ignore empty, null, or placeholder entries.
 
 Return ONLY valid JSON.
 
@@ -136,13 +182,13 @@ Schema:
   ]
 }}
 
-Topics:
+Raw Topics:
 {topics}
 
-Decisions:
+Raw Decisions:
 {decisions}
 
-Tasks:
+Raw Tasks:
 {tasks}
 """
 

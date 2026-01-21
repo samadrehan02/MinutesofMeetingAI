@@ -112,11 +112,34 @@ async def generate_minutes(file: UploadFile = File(...)):
             for i, chunk in enumerate(chunks):
                 print(f">>> extracting facts from chunk {i+1}/{len(chunks)}")
                 chunk_raw = extract_chunk_facts(chunk)
-                chunk_data = json.loads(chunk_raw)
+                chunk_data = json.loads(chunk_raw or "{}")
 
-                all_topics.update(chunk_data["topics"])
-                all_decisions.update(chunk_data["decisions"])
-                all_tasks.extend(chunk_data["tasks"])
+                topics = chunk_data.get("topics", [])
+                decisions = chunk_data.get("decisions", [])
+                tasks = chunk_data.get("tasks", [])
+
+                # sanitize topics
+                for t in topics:
+                    if isinstance(t, str) and t.strip():
+                        all_topics.add(t.strip())
+
+                # sanitize decisions
+                for d in decisions:
+                    if isinstance(d, str) and d.strip():
+                        all_decisions.add(d.strip())
+
+                # sanitize tasks
+                for task in tasks:
+                    if (
+                        isinstance(task, dict)
+                        and isinstance(task.get("description"), str)
+                        and task["description"].strip()
+                    ):
+                        all_tasks.append({
+                            "description": task["description"].strip(),
+                            "owner": task.get("owner") or "Unassigned",
+                            "deadline": task.get("deadline") or "N/A"
+                        })
 
             # Final synthesis (ONE Ollama call)
             minutes_raw = synthesize_minutes(
