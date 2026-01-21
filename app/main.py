@@ -4,16 +4,22 @@ load_dotenv()
 import json
 import os
 import tempfile
-import ffmpeg
+import shutil
+import gc
+from pathlib import Path
 
+import ffmpeg
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.chunking import chunk_text
-from app.ollama_client import extract_chunk_facts, synthesize_minutes
+from app.ollama_client import (
+    extract_chunk_facts,
+    synthesize_minutes,
+    extract_minutes,
+)
 from app.whisper_gpu import transcribe, release_gpu
-from app.ollama_client import extract_minutes
 
 
 app = FastAPI(title="Minutes of Meeting AI")
@@ -24,7 +30,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 AUDIO_EXTENSIONS = (".wav", ".mp3", ".m4a")
 VIDEO_EXTENSIONS = (".mp4", ".webm", ".mkv")
+
 MAX_TRANSCRIPT_CHARS = 12000
+MAX_UPLOAD_BYTES = 600 * 1024 * 1024  # 600 MB HARD LIMIT (laptop safe)
 
 
 def extract_audio_from_video(video_path: str) -> str:
@@ -41,7 +49,7 @@ def extract_audio_from_video(video_path: str) -> str:
             format="mp3",
             acodec="libmp3lame",
             ac=1,
-            ar="16000"
+            ar="16000",
         )
         .overwrite_output()
         .run(quiet=True)
@@ -60,46 +68,62 @@ async def generate_minutes(file: UploadFile = File(...)):
     print(">>> /minutes endpoint hit")
     print(">>> filename:", file.filename)
 
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Missing filename")
+
     filename = file.filename.lower()
 
     if not filename.endswith(AUDIO_EXTENSIONS + VIDEO_EXTENSIONS):
         raise HTTPException(status_code=400, detail="Unsupported file format")
 
-    # Save uploaded file to temp
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(await file.read())
-        uploaded_path = tmp.name
+    # HARD SIZE LIMIT (prevents system death)
+    if file.size and file.size > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="File too large. Please upload a shorter recording.",
+        )
 
+    uploaded_path = None
     derived_audio_path = None
 
     try:
+        # STREAM upload to disk (NO RAM SPIKE)
+        suffix = Path(file.filename).suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            uploaded_path = tmp.name
+
         input_audio_path = uploaded_path
 
-        # If video, extract audio
+        # If video → extract audio, then DELETE video immediately
         if filename.endswith(VIDEO_EXTENSIONS):
             print(">>> extracting audio from video")
             derived_audio_path = extract_audio_from_video(uploaded_path)
             input_audio_path = derived_audio_path
 
+            os.remove(uploaded_path)
+            uploaded_path = None  # prevent double-delete
+
         print(">>> starting transcription")
         transcript = transcribe(input_audio_path)
         print(">>> transcription done")
 
-        # Free GPU memory before LLM
+        # Free GPU + Python memory ASAP
         release_gpu()
+        gc.collect()
 
         print(">>> extracting minutes")
 
-        # SHORT MEETINGS → single Ollama call (existing behavior)
+        # SHORT MEETINGS → single Ollama call
         if len(transcript) <= MAX_TRANSCRIPT_CHARS:
             minutes_raw = extract_minutes(transcript)
+            minutes = (
+                json.loads(minutes_raw)
+                if isinstance(minutes_raw, str)
+                else minutes_raw
+            )
 
-            if isinstance(minutes_raw, str):
-                minutes = json.loads(minutes_raw)
-            else:
-                minutes = minutes_raw
-
-        # LONG MEETINGS → chunking path
+        # LONG MEETINGS → chunking
         else:
             print(">>> transcript too long, using chunking")
 
@@ -114,22 +138,15 @@ async def generate_minutes(file: UploadFile = File(...)):
                 chunk_raw = extract_chunk_facts(chunk)
                 chunk_data = json.loads(chunk_raw or "{}")
 
-                topics = chunk_data.get("topics", [])
-                decisions = chunk_data.get("decisions", [])
-                tasks = chunk_data.get("tasks", [])
-
-                # sanitize topics
-                for t in topics:
+                for t in chunk_data.get("topics", []):
                     if isinstance(t, str) and t.strip():
                         all_topics.add(t.strip())
 
-                # sanitize decisions
-                for d in decisions:
+                for d in chunk_data.get("decisions", []):
                     if isinstance(d, str) and d.strip():
                         all_decisions.add(d.strip())
 
-                # sanitize tasks
-                for task in tasks:
+                for task in chunk_data.get("tasks", []):
                     if (
                         isinstance(task, dict)
                         and isinstance(task.get("description"), str)
@@ -138,29 +155,33 @@ async def generate_minutes(file: UploadFile = File(...)):
                         all_tasks.append({
                             "description": task["description"].strip(),
                             "owner": task.get("owner") or "Unassigned",
-                            "deadline": task.get("deadline") or "N/A"
+                            "deadline": task.get("deadline") or "N/A",
                         })
 
-            # Final synthesis (ONE Ollama call)
             minutes_raw = synthesize_minutes(
                 topics=list(all_topics),
                 decisions=list(all_decisions),
-                tasks=all_tasks
+                tasks=all_tasks,
             )
 
             minutes = json.loads(minutes_raw)
 
-
         return {
             "transcript": transcript,
-            "minutes_of_meeting": minutes
+            "minutes_of_meeting": minutes,
         }
 
     finally:
-        # Cleanup uploaded file
-        if os.path.exists(uploaded_path):
-            os.remove(uploaded_path)
-
-        # Cleanup extracted audio if it exists
+        # Cleanup extracted audio
         if derived_audio_path and os.path.exists(derived_audio_path):
             os.remove(derived_audio_path)
+
+        # Cleanup upload if still present
+        if uploaded_path and os.path.exists(uploaded_path):
+            os.remove(uploaded_path)
+
+        # Ensure file handle closed
+        try:
+            file.file.close()
+        except Exception:
+            pass
