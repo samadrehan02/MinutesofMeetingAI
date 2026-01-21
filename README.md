@@ -135,4 +135,4 @@ The frontend renders this into a readable Minutes of Meeting view.
 
 ## License
 
-Internal / experimental use.
+MIT License
