@@ -85,7 +85,7 @@ async def generate_minutes(file: UploadFile = File(...)):
         # Free GPU memory before LLM
         release_gpu()
 
-        print(">>> extracting minutes (single Ollama call)")
+        print(">>> extracting minutes")
         minutes_raw = extract_minutes(transcript)
 
         # Ollama returns JSON as string → parse
