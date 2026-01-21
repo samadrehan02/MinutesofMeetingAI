@@ -58,3 +58,104 @@ Transcript:
 
     # Ollama returns JSON as a string in "response"
     return resp.json()["response"]
+
+def extract_chunk_facts(chunk: str) -> str:
+    prompt = f"""
+Extract ONLY factual information from the following meeting transcript chunk.
+
+Rules:
+- Do NOT summarize
+- Do NOT explain
+- Do NOT invent information
+- If nothing is present, return empty arrays
+
+Return ONLY valid JSON.
+
+Schema:
+{{
+  "topics": [string],
+  "decisions": [string],
+  "tasks": [
+    {{
+      "description": string,
+      "owner": string|null,
+      "deadline": string|null
+    }}
+  ]
+}}
+
+Transcript chunk:
+\"\"\"{chunk}\"\"\"
+"""
+
+    resp = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0,
+            "format": "json"
+        },
+        timeout=120
+    )
+
+    return resp.json()["response"]
+
+def synthesize_minutes(topics, decisions, tasks) -> str:
+    prompt = f"""
+You are generating FINAL Minutes of Meeting.
+
+Use ONLY the provided data.
+Do NOT invent details.
+Do NOT omit important information.
+
+Return ONLY valid JSON.
+
+Schema:
+{{
+  "meeting_summary": string,
+  "key_topics": [
+    {{
+      "topic": string,
+      "details": string
+    }}
+  ],
+  "decisions": [
+    {{
+      "decision": string,
+      "rationale": string
+    }}
+  ],
+  "tasks": [
+    {{
+      "description": string,
+      "owner": string,
+      "deadline": string
+    }}
+  ]
+}}
+
+Topics:
+{topics}
+
+Decisions:
+{decisions}
+
+Tasks:
+{tasks}
+"""
+
+    resp = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "temperature": 0,
+            "format": "json"
+        },
+        timeout=120
+    )
+
+    return resp.json()["response"]

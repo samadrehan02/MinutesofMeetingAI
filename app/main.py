@@ -4,12 +4,14 @@ load_dotenv()
 import json
 import os
 import tempfile
-
 import ffmpeg
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.chunking import chunk_text
+from app.ollama_client import extract_chunk_facts, synthesize_minutes
 from app.whisper_gpu import transcribe, release_gpu
 from app.ollama_client import extract_minutes
 
@@ -22,6 +24,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 AUDIO_EXTENSIONS = (".wav", ".mp3", ".m4a")
 VIDEO_EXTENSIONS = (".mp4", ".webm", ".mkv")
+MAX_TRANSCRIPT_CHARS = 12000
 
 
 def extract_audio_from_video(video_path: str) -> str:
@@ -86,13 +89,44 @@ async def generate_minutes(file: UploadFile = File(...)):
         release_gpu()
 
         print(">>> extracting minutes")
-        minutes_raw = extract_minutes(transcript)
 
-        # Ollama returns JSON as string → parse
-        if isinstance(minutes_raw, str):
-            minutes = json.loads(minutes_raw)
+        # SHORT MEETINGS → single Ollama call (existing behavior)
+        if len(transcript) <= MAX_TRANSCRIPT_CHARS:
+            minutes_raw = extract_minutes(transcript)
+
+            if isinstance(minutes_raw, str):
+                minutes = json.loads(minutes_raw)
+            else:
+                minutes = minutes_raw
+
+        # LONG MEETINGS → chunking path
         else:
-            minutes = minutes_raw
+            print(">>> transcript too long, using chunking")
+
+            chunks = chunk_text(transcript)
+
+            all_topics = set()
+            all_decisions = set()
+            all_tasks = []
+
+            for i, chunk in enumerate(chunks):
+                print(f">>> extracting facts from chunk {i+1}/{len(chunks)}")
+                chunk_raw = extract_chunk_facts(chunk)
+                chunk_data = json.loads(chunk_raw)
+
+                all_topics.update(chunk_data["topics"])
+                all_decisions.update(chunk_data["decisions"])
+                all_tasks.extend(chunk_data["tasks"])
+
+            # Final synthesis (ONE Ollama call)
+            minutes_raw = synthesize_minutes(
+                topics=list(all_topics),
+                decisions=list(all_decisions),
+                tasks=all_tasks
+            )
+
+            minutes = json.loads(minutes_raw)
+
 
         return {
             "transcript": transcript,
