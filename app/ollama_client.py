@@ -1,7 +1,51 @@
 import requests
+import time
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL = "llama3.1:8b-instruct-q4_K_M"
+
+REQUEST_TIMEOUT = 600  # 10 minutes
+MAX_RETRIES = 2
+RETRY_DELAY_SECONDS = 1
+
+
+def _ollama_post(payload: dict) -> str:
+    last_error = None
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.post(
+                OLLAMA_URL,
+                json=payload,
+                timeout=REQUEST_TIMEOUT,
+            )
+
+            if resp.status_code != 200:
+                raise RuntimeError(
+                    f"Ollama HTTP {resp.status_code}: {resp.text}"
+                )
+
+            data = resp.json()
+
+            if not isinstance(data, dict):
+                raise RuntimeError("Ollama response is not a JSON object")
+
+            if "response" not in data:
+                raise RuntimeError(
+                    f"Ollama response missing 'response' field: {data}"
+                )
+
+            if not isinstance(data["response"], str):
+                raise RuntimeError("Ollama 'response' is not a string")
+
+            return data["response"]
+
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY_SECONDS)
+
+    raise RuntimeError(f"Ollama request failed after retries: {last_error}")
 
 
 def extract_minutes(transcript: str) -> str:
@@ -44,20 +88,14 @@ Transcript:
 \"\"\"{transcript}\"\"\"
 """
 
-    resp = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "temperature": 0,
-            "format": "json"
-        },
-        timeout=120
-    )
+    return _ollama_post({
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "temperature": 0,
+        "format": "json",
+    })
 
-    # Ollama returns JSON as a string in "response"
-    return resp.json()["response"]
 
 def extract_chunk_facts(chunk: str) -> str:
     prompt = f"""
@@ -88,19 +126,14 @@ Transcript chunk:
 \"\"\"{chunk}\"\"\"
 """
 
-    resp = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "temperature": 0,
-            "format": "json"
-        },
-        timeout=120
-    )
+    return _ollama_post({
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "temperature": 0,
+        "format": "json",
+    })
 
-    return resp.json()["response"]
 
 def synthesize_minutes(topics, decisions, tasks) -> str:
     prompt = f"""
@@ -192,16 +225,10 @@ Raw Tasks:
 {tasks}
 """
 
-    resp = requests.post(
-        OLLAMA_URL,
-        json={
-            "model": MODEL,
-            "prompt": prompt,
-            "stream": False,
-            "temperature": 0,
-            "format": "json"
-        },
-        timeout=120
-    )
-
-    return resp.json()["response"]
+    return _ollama_post({
+        "model": MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "temperature": 0,
+        "format": "json",
+    })
