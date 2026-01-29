@@ -77,6 +77,7 @@ Video files are automatically converted to mono 16kHz audio before transcription
 
 ---
 
+
 ## Upload Limits and Safety
 
 To prevent system crashes on laptops:
