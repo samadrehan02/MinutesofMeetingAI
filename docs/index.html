@@ -1,1 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minutes of Meeting AI – Structured Meeting Intelligence</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta
+    name="description"
+    content="Minutes of Meeting AI – a structured meeting intelligence system that extracts decisions, action items, and accountability from multi-speaker conversations."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-shell">
+    <!-- Floating background blob -->
+    <div class="hero-blob"></div>
 
+    <!-- Header / Nav -->
+    <header class="site-header">
+      <div class="nav-inner">
+        <a href="#top" class="brand">
+          <span class="brand-mark">MoM</span>
+          <span class="brand-text">Minutes of Meeting AI</span>
+        </a>
+        <nav class="nav-links">
+          <a href="#why">Why</a>
+          <a href="#how">How it works</a>
+          <a href="#extracts">What it extracts</a>
+          <a href="#tech">Under the hood</a>
+        </nav>
+        <div class="nav-cta">
+          <a
+            href="https://github.com/samadrehan02/MinutesofMeetingAI"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-ghost"
+          >
+            View on GitHub
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <main id="top">
+      <section class="hero section reveal">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">NLP · LLM · Meeting Intelligence</p>
+            <h1>
+              Turn chaotic meetings into
+              <span class="highlight">structured decisions</span>.
+            </h1>
+            <p class="hero-subtitle">
+              Minutes of Meeting AI is a structured meeting intelligence system
+              that extracts decisions, action items, and accountability from
+              noisy, multi-speaker conversations so teams never lose what
+              matters. [web:1]
+            </p>
+            <div class="hero-actions">
+              <a
+                href="https://github.com/samadrehan02/MinutesofMeetingAI"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn btn-primary"
+              >
+                Star on GitHub
+              </a>
+              <a href="#how" class="btn btn-text">See how it works ↓</a>
+            </div>
+            <div class="hero-footnote">
+              Focused on structured extraction and constrained summarization,
+              not generic, free-form meeting summaries. [web:1]
+            </div>
+          </div>
+
+          <div class="hero-panel">
+            <div class="hero-card">
+              <div class="hero-card-header">
+                <span class="pill pill-live">Live transcript</span>
+                <span class="pill pill-light">LLM powered</span>
+              </div>
+              <div class="hero-card-body">
+                <div class="transcript-line">
+                  <span class="speaker-tag">PM</span>
+                  <span>We’ll ship the API revamp this sprint.</span>
+                </div>
+                <div class="transcript-line">
+                  <span class="speaker-tag speaker-alt">ENG</span>
+                  <span>Let’s block two days for load testing.</span>
+                </div>
+                <div class="transcript-line">
+                  <span class="speaker-tag">PM</span>
+                  <span>Riya owns QA sign-off by Friday.</span>
+                </div>
+              </div>
+              <div class="hero-card-footer">
+                <div class="hero-chip">
+                  ✅ Decision: Ship API revamp this sprint
+                </div>
+                <div class="hero-chip">
+                  📌 Action: Riya – QA sign-off by Friday
+                </div>
+                <div class="hero-chip">
+                  📌 Action: Team – 2 days of load testing
+                </div>
+              </div>
+            </div>
+            <p class="hero-caption">
+              Designed to surface decisions and action items first, optimizing
+              for downstream usability over narrative summaries. [web:1]
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Why -->
+      <section id="why" class="section reveal">
+        <div class="section-header">
+          <h2>Why this exists</h2>
+          <p>
+            Online and hybrid meetings are messy: overlapping speakers,
+            interruptions, and half-finished sentences. Minutes of Meeting AI
+            focuses on what is actionable instead of producing long story-like
+            summaries. [web:1]
+          </p>
+        </div>
+        <div class="cards-grid">
+          <article class="info-card">
+            <h3>Structured over verbose</h3>
+            <p>
+              The system favors constrained, structured extraction—decisions,
+              tasks, owners—rather than generic abstractive meeting summaries
+              that bury signal in paragraphs. [web:1]
+            </p>
+          </article>
+          <article class="info-card">
+            <h3>Built for noisy reality</h3>
+            <p>
+              Prompts and post-processing are tuned for overlapping speakers,
+              interruptions, and implicit decisions that never get stated as
+              neat sentences. [web:1]
+            </p>
+          </article>
+          <article class="info-card">
+            <h3>Consistency over flair</h3>
+            <p>
+              The goal is repeatable, low-variance extraction of actionable
+              items across many meetings—not a one-off perfect summary. [web:1]
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <!-- How it works -->
+      <section id="how" class="section section-alt reveal">
+        <div class="section-header">
+          <h2>How it works</h2>
+          <p>
+            From raw multi-speaker audio or transcripts to a compact, structured
+            view of your meeting in just a few steps.
+          </p>
+        </div>
+
+        <div class="flow-grid">
+          <ol class="flow-steps">
+            <li class="flow-step active" data-step="1">
+                <span class="flow-index">01</span>
+                <h3>Upload audio or video</h3>
+                <p>
+                    The FastAPI backend streams your file to disk, enforces a laptop-safe size
+                    limit, and extracts mono 16&nbsp;kHz MP3 audio from videos using ffmpeg.
+                </p>
+                </li>
+                <li class="flow-step" data-step="2">
+                <span class="flow-index">02</span>
+                <h3>GPU transcription with Whisper</h3>
+                <p>
+                    A faster‑whisper <span class="nowrap">small</span> model on CUDA produces a
+                    full transcript, then releases GPU memory immediately so your machine stays
+                    responsive.
+                </p>
+                </li>
+                <li class="flow-step" data-step="3">
+                <span class="flow-index">03</span>
+                <h3>LLM extraction via Ollama</h3>
+                <p>
+                    A local Llama model, running through Ollama, turns the transcript into
+                    structured JSON minutes with summary, topics, decisions, and tasks.
+                </p>
+                </li>
+                <li class="flow-step" data-step="4">
+                <span class="flow-index">04</span>
+                <h3>Smart handling for long meetings</h3>
+                <p>
+                    Long transcripts are chunked with overlap, facts are extracted per chunk,
+                    then consolidated into final minutes validated against a strict schema.
+                </p>
+                </li>
+          </ol>
+
+          <div class="flow-panel">
+            <div class="flow-screen" data-step-panel="1">
+              <h4>Step 01 · Capture & diarize</h4>
+              <p>
+                Connect your existing transcription pipeline or feed the
+                project’s components meeting transcripts to get speaker-tagged
+                text as input.
+              </p>
+              <pre><code>// pseudo
+meeting = load_transcript("sprint-review.json")
+segments = diarize(meeting)</code></pre>
+            </div>
+
+            <div class="flow-screen hidden" data-step-panel="2">
+              <h4>Step 02 · Targeted LLM pass</h4>
+              <p>
+                The prompt steers the model to classify utterances into
+                decisions, tasks, and notes instead of free-form summarization.
+              </p>
+              <pre><code>// pseudo
+structured = extract_structured_items(segments)
+console.log(structured.decisions[0])</code></pre>
+            </div>
+
+            <div class="flow-screen hidden" data-step-panel="3">
+              <h4>Step 03 · Post-processing</h4>
+              <p>
+                Items are merged, cleaned, and aligned with owners so teams can
+                trust the output as a single source of truth.
+              </p>
+              <pre><code>// pseudo
+clean = normalize_and_merge(structured)
+tasks = attach_due_dates(clean.action_items)</code></pre>
+            </div>
+
+            <div class="flow-screen hidden" data-step-panel="4">
+              <h4>Step 04 · Structured output</h4>
+              <p>
+                Feed the resulting structure to a UI, email template, or task
+                system for instant, actionable minutes of meeting.
+              </p>
+              <pre><code>// pseudo
+export({
+  decisions: clean.decisions,
+  actionItems: tasks,
+  keyPoints: clean.key_points
+})</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- What it extracts -->
+      <section id="extracts" class="section reveal">
+        <div class="section-header">
+          <h2>What it extracts</h2>
+          <p>
+            Instead of a wall of text, Minutes of Meeting AI emits a structured
+            snapshot of the meeting’s intent and follow-ups. [web:1]
+          </p>
+        </div>
+
+        <div class="extracts-layout">
+          <div class="extracts-list">
+            <div class="extract-card">
+              <h3>Decisions</h3>
+              <p>
+                Clear records of what was decided, including who was involved,
+                so you can answer “when did we agree to this?” instantly.
+              </p>
+            </div>
+            <div class="extract-card">
+              <h3>Action items</h3>
+              <p>
+                Concrete tasks with owners and, when inferable, due dates, so
+                meetings directly translate into execution.
+              </p>
+            </div>
+            <div class="extract-card">
+              <h3>Accountability</h3>
+              <p>
+                Speaker-aware extraction ties commitments back to people and
+                roles to reduce ambiguity and follow-up churn. [web:1]
+              </p>
+            </div>
+          </div>
+
+          <div class="extracts-preview">
+            <div class="tab-toggle">
+              <button class="tab-btn active" data-tab="product">
+                Product review
+              </button>
+              <button class="tab-btn" data-tab="standup">
+                Daily standup
+              </button>
+            </div>
+            <div class="tab-panel" data-tab-panel="product">
+              <div class="json-preview">
+<pre><code>{
+  "decisions": [
+    "Ship API revamp in Sprint 14."
+  ],
+  "action_items": [
+    "Riya to finalize QA plan by Friday.",
+    "Arjun to add API load tests to CI."
+  ],
+  "owners": ["Riya", "Arjun"]
+}</code></pre>
+              </div>
+            </div>
+            <div class="tab-panel hidden" data-tab-panel="standup">
+              <div class="json-preview">
+<pre><code>{
+  "decisions": [
+    "Pause feature X until customer feedback."
+  ],
+  "action_items": [
+    "Sam to prepare experiment summary.",
+    "Team to propose alt designs by Monday."
+  ],
+  "owners": ["Sam", "Team"]
+}</code></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Under the hood -->
+      <section id="tech" class="section section-alt reveal">
+        <div class="section-header">
+          <h2>Under the hood</h2>
+          <p>
+            The project combines modern transcription and LLM techniques with
+            carefully designed prompts and post-processing for more stable,
+            structured outputs. [web:1]
+          </p>
+        </div>
+
+        <div class="tech-grid">
+          <div class="tech-column">
+            <h3>Research focus</h3>
+            <ul class="checklist">
+              <li>
+                Structured extraction & constrained summarization as alternatives
+                to generic abstractive summaries. [web:1]
+              </li>
+              <li>
+                Robust behavior under overlapping speakers and noisy,
+                real-world transcripts. [web:1]
+              </li>
+              <li>
+                Optimized outputs for downstream tools and workflows rather than
+                narrative completeness. [web:1]
+              </li>
+            </ul>
+          </div>
+          <div class="tech-column">
+            <h3>Implementation themes</h3>
+            <ul class="checklist">
+              <li>Modular pipeline for capture → extract → clean → export.</li>
+              <li>
+                LLM prompting focused on decisions, tasks, and owners as
+                first-class objects.
+              </li>
+              <li>
+                Extensible output schema that can back a UI, email template, or
+                integrations.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Call to action -->
+      <section class="section final-cta reveal">
+        <div class="final-inner">
+          <h2>Ready to make your meetings actionable?</h2>
+          <p>
+            Explore the source, adapt the pipeline to your stack, or plug it
+            into your existing transcription system.
+          </p>
+          <div class="hero-actions">
+            <a
+              href="https://github.com/samadrehan02/MinutesofMeetingAI"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary"
+            >
+              Open project on GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        Built by <span class="signature">Sam Reh</span> · Minutes of Meeting AI
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
