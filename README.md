@@ -1,5 +1,7 @@
 # Minutes of Meeting AI
 
+https://samadrehan02.github.io/MinutesofMeetingAI/
+
 A local, privacy-preserving Minutes of Meeting (MoM) generator that converts long
 audio or video recordings into structured meeting minutes using Whisper (GPU)
 and Ollama (local LLM).
