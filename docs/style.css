@@ -649,6 +649,11 @@ body {
   text-align: center;
   padding-bottom: 60px;
 }
+.final-cta .hero-actions {
+  display: flex;
+  justify-content: center;
+}
+
 
 .final-inner {
   border-radius: 28px;
@@ -744,3 +749,4 @@ body {
     padding-inline: 16px;
   }
 }
+
